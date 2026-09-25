@@ -67,6 +67,14 @@
             .contenido { margin-left: 0; padding: 1.5rem 1rem; }
             .pie { margin-left: 0; }
         }
+
+        /* Barra lateral oscura */
+        .sidebar { background: var(--aws-navy); border-right: 1px solid #1a2330; border-top: 1px solid #36465a; }
+        .sidebar .seccion { color: #9ba7b6; }
+        .sidebar a { color: #d5dbdb; }
+        .sidebar a:hover { background: #2f3d4e; color: #ffffff; }
+        .sidebar a.active { background: #16202b; color: var(--aws-orange); border-left-color: var(--aws-orange); }
+        @media (max-width: 991.98px) { .sidebar { border-bottom: 1px solid #1a2330; } }
     </style>
 </head>
 <body>
