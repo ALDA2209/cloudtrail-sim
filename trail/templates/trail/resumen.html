@@ -1,0 +1,127 @@
+{% extends "trail/base.html" %}
+{% block title %}Resumen | CloudTrail Simulator{% endblock %}
+{% block nav_resumen %}active{% endblock %}
+
+{% block content %}
+<h3 class="mb-1">Resumen de actividad</h3>
+<p class="text-muted">Vista general de los eventos registrados por CloudTrail en la cuenta.</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg"><div class="card stat"><div class="card-body">
+        <div class="valor">{{ total }}</div><div class="etiqueta">Eventos registrados</div>
+    </div></div></div>
+    <div class="col-6 col-lg"><div class="card stat"><div class="card-body">
+        <div class="valor text-danger">{{ errores }}</div><div class="etiqueta">Errores / denegados</div>
+    </div></div></div>
+    <div class="col-6 col-lg"><div class="card stat"><div class="card-body">
+        <div class="valor text-warning">{{ logins_fallidos }}</div><div class="etiqueta">Logins fallidos</div>
+    </div></div></div>
+    <div class="col-6 col-lg"><div class="card stat"><div class="card-body">
+        <div class="valor">{{ usuarios_unicos }}</div><div class="etiqueta">Usuarios activos</div>
+    </div></div></div>
+    <div class="col-6 col-lg"><div class="card stat"><div class="card-body">
+        <div class="valor">{{ ips_unicas }}</div><div class="etiqueta">IPs de origen</div>
+    </div></div></div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">Eventos por día (últimos 7 días)</div>
+            <div class="card-body"><canvas id="graficoDias" height="120"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">Resultado de las llamadas</div>
+            <div class="card-body"><div style="max-width:250px;margin:0 auto"><canvas id="graficoResultado"></canvas></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">Eventos por servicio</div>
+            <div class="card-body"><canvas id="graficoServicios"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header">Acciones sensibles recientes</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr><th>Hora</th><th>Evento</th><th>Usuario</th><th>IP</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for e in sensibles %}
+                            <tr>
+                                <td class="mono">{{ e.event_time|date:"d/m H:i" }}</td>
+                                <td><a href="{% url 'detalle' e.event_id %}"><strong>{{ e.event_name }}</strong></a></td>
+                                <td>{{ e.user_name }}</td>
+                                <td class="mono">{{ e.source_ip }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">Sin acciones sensibles.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-secondary">
+    <div class="card-body d-flex flex-wrap align-items-center gap-3">
+        <div class="me-auto">
+            <strong>Datos de demostración</strong><br>
+            <small class="text-muted">Borra todos los eventos y carga 150 eventos de los últimos 7 días más el escenario de ataque.</small>
+        </div>
+        <form method="post" onsubmit="return confirm('¿Borrar todos los eventos y cargar datos de demostración?');">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="reiniciar">
+            <button class="btn btn-outline-dark">Reiniciar datos de demostración</button>
+        </form>
+    </div>
+</div>
+
+{{ graficos|json_script:"datos-graficos" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const d = JSON.parse(document.getElementById("datos-graficos").textContent);
+    const naranja = "#ff9900", azul = "#232f3e", rojo = "#dc3545", verde = "#198754";
+
+    new Chart(document.getElementById("graficoDias"), {
+        type: "bar",
+        data: {
+            labels: d.dias,
+            datasets: [
+                { label: "Eventos", data: d.eventos_dia, backgroundColor: naranja },
+                { label: "Errores", data: d.errores_dia, backgroundColor: rojo },
+            ],
+        },
+        options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+    });
+
+    new Chart(document.getElementById("graficoResultado"), {
+        type: "doughnut",
+        data: {
+            labels: ["Éxito", "Error / denegado"],
+            datasets: [{ data: d.resultado, backgroundColor: [verde, rojo] }],
+        },
+    });
+
+    new Chart(document.getElementById("graficoServicios"), {
+        type: "bar",
+        data: {
+            labels: d.servicios,
+            datasets: [{ label: "Eventos", data: d.servicios_n, backgroundColor: azul }],
+        },
+        options: { indexAxis: "y", plugins: { legend: { display: false } },
+                   scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } },
+    });
+</script>
+{% endblock %}

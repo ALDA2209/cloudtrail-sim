@@ -1,0 +1,131 @@
+{% extends "trail/base.html" %}
+{% block title %}Event history | CloudTrail Simulator{% endblock %}
+{% block nav_historial %}active{% endblock %}
+
+{% block content %}
+<h3 class="mb-1">Event history</h3>
+<p class="text-muted">Registro de todas las acciones realizadas en la cuenta. Resultados: <strong>{{ total_filtrado }}</strong></p>
+
+<div class="card mb-4">
+    <div class="card-header">Filtros</div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Usuario</label>
+                <select name="usuario" class="form-select">
+                    <option value="">Todos</option>
+                    {% for u in usuarios %}
+                        <option value="{{ u }}" {% if request.GET.usuario == u %}selected{% endif %}>{{ u }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Evento</label>
+                <select name="evento" class="form-select">
+                    <option value="">Todos</option>
+                    {% for ev in eventos %}
+                        <option value="{{ ev }}" {% if request.GET.evento == ev %}selected{% endif %}>{{ ev }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Servicio</label>
+                <select name="servicio" class="form-select">
+                    <option value="">Todos</option>
+                    {% for s in servicios %}
+                        <option value="{{ s }}" {% if request.GET.servicio == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">IP de origen</label>
+                <input type="text" name="ip" value="{{ request.GET.ip }}" class="form-control" placeholder="Ej: 185.220">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Resultado</label>
+                <select name="resultado" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="exito" {% if request.GET.resultado == "exito" %}selected{% endif %}>Éxito</option>
+                    <option value="error" {% if request.GET.resultado == "error" %}selected{% endif %}>Error / Denegado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo</label>
+                <select name="tipo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="lectura" {% if request.GET.tipo == "lectura" %}selected{% endif %}>Lectura</option>
+                    <option value="escritura" {% if request.GET.tipo == "escritura" %}selected{% endif %}>Escritura</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Desde</label>
+                <input type="date" name="desde" value="{{ request.GET.desde }}" class="form-control">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Hasta</label>
+                <input type="date" name="hasta" value="{{ request.GET.hasta }}" class="form-control">
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-aws">Filtrar</button>
+                <a href="{% url 'historial' %}" class="btn btn-outline-secondary">Limpiar</a>
+                <a href="{% url 'exportar' %}?{{ querystring }}" class="btn btn-outline-dark ms-auto">Exportar JSON</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Hora</th><th>Evento</th><th>Servicio</th><th>Tipo</th>
+                    <th>Usuario</th><th>IP</th><th>Región</th><th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in pagina %}
+                    <tr>
+                        <td class="mono">{{ e.event_time|date:"d/m/Y H:i:s" }}</td>
+                        <td><a href="{% url 'detalle' e.event_id %}"><strong>{{ e.event_name }}</strong></a></td>
+                        <td class="mono">{{ e.event_source }}</td>
+                        <td>
+                            {% if e.read_only %}
+                                <span class="badge text-bg-light border">Lectura</span>
+                            {% else %}
+                                <span class="badge text-bg-warning">Escritura</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ e.user_name }}</td>
+                        <td class="mono">{{ e.source_ip }}</td>
+                        <td class="mono">{{ e.aws_region }}</td>
+                        <td>
+                            {% if e.exitoso %}
+                                <span class="badge bg-success">Éxito</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ e.error_code }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="8" class="text-center text-muted py-3">No hay eventos con esos filtros.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% if pagina.paginator.num_pages > 1 %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% if pagina.has_previous %}
+            <li class="page-item"><a class="page-link" href="?{{ querystring }}&page={{ pagina.previous_page_number }}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span></li>
+        {% if pagina.has_next %}
+            <li class="page-item"><a class="page-link" href="?{{ querystring }}&page={{ pagina.next_page_number }}">Siguiente</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "trail/base.html" %}
+{% block title %}Simular acciones | CloudTrail Simulator{% endblock %}
+{% block nav_panel %}active{% endblock %}
+
+{% block content %}
+<h3 class="mb-1">Simular actividad en la cuenta AWS</h3>
+<p class="text-muted">Cada acción que ejecutes aquí es capturada y registrada por CloudTrail. Eventos registrados: <strong>{{ total }}</strong></p>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header">Acción manual</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo" value="manual">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Acción (API de AWS)</label>
+                            <select name="accion" class="form-select">
+                                {% for servicio, acciones in acciones_por_servicio.items %}
+                                    <optgroup label="{{ servicio }}">
+                                        {% for nombre, desc in acciones %}
+                                            <option value="{{ nombre }}">{{ nombre }} ({{ desc }})</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Usuario IAM</label>
+                            <select name="usuario" class="form-select">
+                                {% for u in usuarios %}<option>{{ u }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">IP de origen</label>
+                            <select name="ip" class="form-select">
+                                {% for ip in ips %}<option>{{ ip }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Región</label>
+                            <select name="region" class="form-select">
+                                {% for r in regiones %}<option>{{ r }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="fallar" id="fallar">
+                                <label class="form-check-label" for="fallar">Simular que la acción falla (acceso denegado / error)</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-aws">Ejecutar acción</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5 d-flex flex-column gap-4">
+        <div class="card">
+            <div class="card-header">Generación masiva</div>
+            <div class="card-body">
+                <form method="post" class="d-flex gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo" value="aleatorio">
+                    <input type="number" name="cantidad" value="20" min="1" max="500" class="form-control" style="max-width:110px">
+                    <button class="btn btn-outline-dark">Generar eventos aleatorios</button>
+                </form>
+                <small class="text-muted">Simula actividad normal de varios usuarios.</small>
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-header text-danger">Escenario: credenciales robadas</div>
+            <div class="card-body">
+                <p class="small mb-2">
+                    Un atacante usa las credenciales de <span class="mono">dev.backend</span> desde una IP extranjera:
+                    prueba contraseñas, entra, se da permisos de administrador, crea un usuario oculto,
+                    abre el puerto 22, <strong>apaga CloudTrail</strong> y borra un bucket de backups.
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo" value="ataque">
+                    <button class="btn btn-danger">Simular actividad sospechosa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Últimos 10 eventos registrados</div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Hora</th><th>Evento</th><th>Servicio</th><th>Usuario</th><th>IP</th><th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in ultimos %}
+                    <tr>
+                        <td class="mono">{{ e.event_time|date:"d/m/Y H:i:s" }}</td>
+                        <td><strong>{{ e.event_name }}</strong></td>
+                        <td class="mono">{{ e.event_source }}</td>
+                        <td>{{ e.user_name }}</td>
+                        <td class="mono">{{ e.source_ip }}</td>
+                        <td>
+                            {% if e.exitoso %}
+                                <span class="badge bg-success">Éxito</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ e.error_code }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-3">Aún no hay eventos. Ejecuta una acción.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

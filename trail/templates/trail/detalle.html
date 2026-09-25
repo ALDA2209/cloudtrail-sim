@@ -1,0 +1,51 @@
+{% extends "trail/base.html" %}
+{% block title %}{{ e.event_name }} | CloudTrail Simulator{% endblock %}
+{% block nav_historial %}active{% endblock %}
+
+{% block content %}
+<a href="{% url 'historial' %}" class="btn btn-sm btn-outline-secondary mb-3">← Volver al historial</a>
+<h3 class="mb-3">
+    {{ e.event_name }}
+    {% if e.exitoso %}
+        <span class="badge bg-success fs-6 align-middle">Éxito</span>
+    {% else %}
+        <span class="badge bg-danger fs-6 align-middle">{{ e.error_code }}</span>
+    {% endif %}
+</h3>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card mb-4">
+            <div class="card-header">Detalles del evento</div>
+            <table class="table table-sm mb-0">
+                <tr><th>Hora</th><td class="mono">{{ e.event_time|date:"d/m/Y H:i:s" }}</td></tr>
+                <tr><th>Usuario</th><td>{{ e.user_name }} <span class="text-muted">({{ e.user_type }})</span></td></tr>
+                <tr><th>Servicio</th><td class="mono">{{ e.event_source }}</td></tr>
+                <tr><th>Tipo</th><td>{{ e.event_type }} · {% if e.read_only %}Lectura{% else %}Escritura{% endif %}</td></tr>
+                <tr><th>IP de origen</th><td class="mono">{{ e.source_ip }}</td></tr>
+                <tr><th>Región</th><td class="mono">{{ e.aws_region }}</td></tr>
+                <tr><th>User agent</th><td class="mono small">{{ e.user_agent }}</td></tr>
+                <tr><th>Event ID</th><td class="mono small">{{ e.event_id }}</td></tr>
+                {% if not e.exitoso %}
+                    <tr><th>Error</th><td class="text-danger">{{ e.error_message }}</td></tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Integridad (cadena de hashes SHA-256)</div>
+            <div class="card-body small">
+                <div class="mb-2"><strong>Hash anterior:</strong><br><span class="mono text-break">{{ e.prev_hash }}</span></div>
+                <div><strong>Hash de este evento:</strong><br><span class="mono text-break">{{ e.hash }}</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">Registro del evento (formato CloudTrail JSON)</div>
+            <pre class="mb-0 p-3 mono" style="background:#1e1e1e;color:#d4d4d4;max-height:600px;overflow:auto;">{{ json_evento }}</pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
