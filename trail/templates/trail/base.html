@@ -80,12 +80,12 @@
 </header>
 
 <nav class="sidebar">
-    <div class="titulo">CloudTrail</div>
+    <div class="seccion">Simulador</div>
+    <a class="{% block nav_panel %}{% endblock %}" href="{% url 'panel' %}"><i class="bi bi-play-circle"></i> Simular acciones</a>
+    <div class="seccion">CloudTrail</div>
     <a class="{% block nav_resumen %}{% endblock %}" href="{% url 'resumen' %}"><i class="bi bi-speedometer2"></i> Resumen</a>
     <a class="{% block nav_historial %}{% endblock %}" href="{% url 'historial' %}"><i class="bi bi-clock-history"></i> Event history</a>
     <a class="{% block nav_integridad %}{% endblock %}" href="{% url 'integridad' %}"><i class="bi bi-shield-check"></i> Integridad</a>
-    <div class="seccion">Simulador</div>
-    <a class="{% block nav_panel %}{% endblock %}" href="{% url 'panel' %}"><i class="bi bi-play-circle"></i> Simular acciones</a>
 </nav>
 
 <main class="contenido">
